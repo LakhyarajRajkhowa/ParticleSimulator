@@ -4,6 +4,8 @@ A simple 2-D Particle Simulator engine made in C++ using SDL2 for rendering.
 It uses Verlet integration to simulate realistic particle physics.  
 Gravity can be dynamically adjusted in real time using the keyboard.
 
+<img width="1871" height="928" alt="Image" src="https://github.com/user-attachments/assets/790680f7-7aa7-4865-a35a-5b2ba8fec23a" />
+
 ## Features
 
 - Particle simulation using Verlet integration
