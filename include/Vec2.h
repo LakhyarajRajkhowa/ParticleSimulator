@@ -9,11 +9,9 @@ class Vec2
 public:
     float x, y;
 
-    // Constructors
     Vec2() : x(0), y(0) {}
     Vec2(float x, float y) : x(x), y(y) {}
 
-    // Addition
     Vec2 operator+(const Vec2 &other) const
     {
         return Vec2(x + other.x, y + other.y);
@@ -25,7 +23,6 @@ public:
         return *this;
     }
 
-    // Subtraction
     Vec2 operator-(const Vec2 &other) const
     {
         return Vec2(x - other.x, y - other.y);
