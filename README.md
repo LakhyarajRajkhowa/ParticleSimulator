@@ -1,6 +1,6 @@
 # ParticleSimulator with SDL2 
 
-A simple 2-D Particle Simulator engine made in C++ using SDL2 for rendering.  
+A simple 2-D Particle Simulator engine made in C++ using OpenGL for rendering.  
 It uses Verlet integration to simulate realistic particle physics.  
 Gravity can be dynamically adjusted in real time using the keyboard.
 
@@ -14,11 +14,11 @@ Gravity can be dynamically adjusted in real time using the keyboard.
   - **S**: Apply downward acceleration (gravity down)
   - **A**: Apply leftward acceleration (gravity left)
   - **D**: Apply rightward acceleration (gravity right)
-- Real-time 2D rendering with SDL2
+- Real-time 2D rendering with OpenGL
 - Modular and extensible C++ code structure
 
 ## Prerequisites
-
+- CUDA Toolkit 13.0 or later
 - SDL2 installed (or use provided `lib/` folder)
 - A C++ compiler (e.g. g++, clang, or MSVC)
 - CMake (version 3.10+)
