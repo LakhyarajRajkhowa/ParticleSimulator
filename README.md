@@ -35,5 +35,5 @@ cmake --build .
 
 ## Run Instructions (Windows)
 
-- Copy the "run/SDL2.dll" program and paste in the build folder near the .exe program.
-- Run the .exe program
+- run the ParticleSimulator.exe in the bin folder
+
