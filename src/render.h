@@ -10,7 +10,7 @@
 
 
 #include "../Lengine/GLSLProgram.h"
-
+#include "../Lengine/Camera3d.h"
 extern bool isFluid;
 
 
@@ -18,40 +18,26 @@ class Render {
     ObjectManager& objectManager;
 public:
     Render(ObjectManager& objMgr) : objectManager(objMgr) {}
-
-    int createWindow(std::string windowName, int screenWidth, int screenHeight, unsigned int currentFlags);
-    void initCudaInterop();
-
-    void initParticleBuffers();
-
+    
     void renderUI();
-
-    void renderGPU();
-
-    void present();
-
     void cleanupCudaInterop();
     int destroy();
 
 
 private:
 
+    GLuint particleVAO = 0;
+    GLuint particleVBO = 0;
+
 	std::string vertexShaderPath = "../shaders/particle.vert";
 	std::string fragmentShaderPath = "../shaders/particle.frag";
 
-    SDL_Window* _sdlWindow = nullptr;
-    SDL_GLContext glContext;
-    Lengine::GLSLProgram glsl;
-    GLuint shaderProgram;
-
 	float renderSize = ObjectManager::objectRadius * 2.0f;
-
-    GLuint particleVAO = 0;
-    GLuint particleVBO = 0;
+	Lengine::Camera3d camera3D;
 
     std::vector<float> particleData;
 
     void addImGuiParameter(const char* label);
 
-	int MAX_PARTICLES = ObjectManager::MAX_PARTICLES;
+	uint64_t MAX_PARTICLES = ObjectManager::MAX_PARTICLES;
 };

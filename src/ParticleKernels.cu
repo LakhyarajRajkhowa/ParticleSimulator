@@ -3,7 +3,7 @@
 #include <iostream>
 
 
-__global__ void updateParticlesKernel(VerletObjectCUDA* particles, float* vboPtr, int N, float dt)
+__global__ void updateParticlesKernel(VerletObjectCUDA* particles, float* vboPtr, uint64_t N, float dt)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
@@ -12,17 +12,19 @@ __global__ void updateParticlesKernel(VerletObjectCUDA* particles, float* vboPtr
 
     p.updatePosition(dt);
  
-    int idx = i * 6;
+    int idx = i * 7;
     vboPtr[idx + 0] = p.current_position.x;
     vboPtr[idx + 1] = p.current_position.y;
-    vboPtr[idx + 2] = p.color.x; 
-    vboPtr[idx + 3] = p.color.y; 
-    vboPtr[idx + 4] = p.color.z; 
-    vboPtr[idx + 5] = p.radius;
+	vboPtr[idx + 2] = p.current_position.z; 
+    vboPtr[idx + 3] = p.color.x; 
+    vboPtr[idx + 4] = p.color.y; 
+    vboPtr[idx + 5] = p.color.z; 
+    vboPtr[idx + 6] = p.radius;
+
     
 };
 
-__global__ void applyGravityKernel(VerletObjectCUDA* particles, int N, float2 gravity)
+__global__ void applyGravityKernel(VerletObjectCUDA* particles, uint64_t N, float3 gravity)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
@@ -33,7 +35,7 @@ __global__ void applyGravityKernel(VerletObjectCUDA* particles, int N, float2 gr
 
 
 
- void launchUpdateParticlesKernel(VerletObjectCUDA* d_particles, float* d_vbo, int N, float dt)
+ void launchUpdateParticlesKernel(VerletObjectCUDA* d_particles, float* d_vbo, uint64_t N, float dt)
 {
      
     int threads = 256;
@@ -47,7 +49,7 @@ __global__ void applyGravityKernel(VerletObjectCUDA* particles, int N, float2 gr
 
    
 }
- void applyGravityGPU(VerletObjectCUDA* d_particles, int N, float2 gravity)
+ void applyGravityGPU(VerletObjectCUDA* d_particles, uint64_t N, float3 gravity)
  {
     
      int threads = 256;
@@ -60,12 +62,12 @@ __global__ void applyGravityKernel(VerletObjectCUDA* particles, int N, float2 gr
          std::cerr << "[CUDA] applyGravityKernel error: " << cudaGetErrorString(err) << "\n";
      }  
  }
- void applyBoundaryCollisionGPU(VerletObjectCUDA* d_particles, int N, int screenWidth, int screenHeight, float restitution)
+ void applyBoundaryCollisionGPU(VerletObjectCUDA* d_particles, uint64_t N, uint16_t boxWidth, uint16_t boxHeight, uint16_t boxDepth, float restitution)
  {
      int threads = 256;
      int blocks = (N + threads - 1) / threads;
 
-     applyBoundaryCollisionKernel << <blocks, threads >> > (d_particles, N, screenWidth, screenHeight, restitution);
+     applyBoundaryCollisionKernel << <blocks, threads >> > (d_particles, N, boxWidth, boxHeight, boxDepth, restitution);
 
      cudaError_t err = cudaGetLastError();
      if (err != cudaSuccess) {
@@ -73,22 +75,22 @@ __global__ void applyGravityKernel(VerletObjectCUDA* particles, int N, float2 gr
      }  
  }
 
- void solveCollisionByGridGPU(VerletObjectCUDA* d_particles, int N, float response_coef, float attraction_coef, float repulsion_coef) {
+ void solveCollisionByGridGPU(VerletObjectCUDA* d_particles, uint64_t N, float response_coef, float attraction_coef, float repulsion_coef) {
    
      int threads = 256;
      int blocks = (N + threads - 1) / threads;
 
-     resetGridGPU();
-     buildGridKernel << <blocks, threads >> > (d_particles, N);
-     solveCollisionByGridKernel << <blocks, threads >> > (d_particles, N, response_coef, attraction_coef, repulsion_coef);
-     applyDisplacementsKernel << <blocks, threads >> > (d_particles, N);
+     resetGrid3D() ;
+     buildGridKernel3D << <blocks, threads >> > (d_particles, N);
+     solveCollisionByGridKernel3D << <blocks, threads >> > (d_particles, N, response_coef, attraction_coef, repulsion_coef);
+     applyDisplacementsKernel3D << <blocks, threads >> > (d_particles, N);
 
      cudaError_t err = cudaGetLastError();
      if (err != cudaSuccess)
          std::cerr << "[CUDA] solveCollisionByGridGPU error: " << cudaGetErrorString(err) << "\n";
  }
 
- void solveInteraction(VerletObjectCUDA* d_particles, int N, float2 mouseCoords, float radius, float intensity, float dt) {
+ void solveInteraction(VerletObjectCUDA* d_particles, uint64_t N, float2 mouseCoords, float radius, float intensity, float dt) {
      int threads = 256;
      int blocks = (N + threads - 1) / threads;
      moveObjects << <blocks, threads >> > (d_particles, N, mouseCoords, radius, intensity, dt);

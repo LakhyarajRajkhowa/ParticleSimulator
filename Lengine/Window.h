@@ -18,8 +18,8 @@ namespace Lengine {
 		void swapBuffer();
 		void quitWindow();
 
-		int getScreenWidth() { return _screenWidth; }
-		int getScreenHeight() { return _screenHeight; }
+		uint32_t getScreenWidth() { return _screenWidth; }
+		uint32_t getScreenHeight() { return _screenHeight; }
 
 		SDL_Window* getWindow() { return _sdlWindow; }
 
@@ -27,7 +27,7 @@ namespace Lengine {
 		
 		SDL_Window* _sdlWindow;
 		SDL_GLContext glContext;
-		int _screenWidth, _screenHeight;
+		uint32_t _screenWidth, _screenHeight;
 
 	};
 }

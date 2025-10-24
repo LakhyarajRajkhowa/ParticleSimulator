@@ -37,17 +37,14 @@ namespace Lengine {
 
    
     void Camera3d::update(float deltaTime ) {
-        const float speed = 0.1f * deltaTime;
-
-           
-        for (SDL_Keycode key : { SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_SPACE, SDLK_LSHIFT, SDLK_g, SDLK_h , SDLK_UP}) {
+        const float speed = 100.0f * deltaTime;
+        for (SDL_Keycode key : { SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_SPACE, SDLK_LSHIFT, SDLK_g, SDLK_h, SDLK_UP}) {
             if (_inputManager->isKeyDown(key)) {
+               
                 switch (key) {
-                case SDLK_UP:
-                    position += glm::normalize(front) * speed * 10.0f;
-                    break;
+             
                 case SDLK_w:
-                    position += glm::normalize(front) * speed ;
+                    position += glm::normalize(front) * speed;
                     break;
                 case SDLK_s:
                     position -= glm::normalize(front) * speed;
@@ -63,16 +60,6 @@ namespace Lengine {
                     break;
                 case SDLK_LSHIFT:
                     position -= glm::normalize(up) * speed;
-                    break;
-                }
-            }
-            if (_inputManager->isKeyPressed(key)) {
-                switch (key) {
-                case SDLK_g:
-                    _applyGravity = true;
-                    break;
-                case SDLK_h:
-                    _applyGravity = false;
                     break;
                 }
             }
@@ -101,5 +88,22 @@ namespace Lengine {
         _speed += 0.01;
         position.y -= _speed;
     }
+    void Camera3d::rotateCamera(const glm::vec3& center, float radius, float angularSpeed, float deltaTime) {
+        // Keep static angle so it continues orbiting over time
+        static float angle = 0.0f;
+
+        // Increase angle based on angular speed and frame time
+        angle += angularSpeed * deltaTime;
+        if (angle > 360.0f) angle -= 360.0f;
+
+        // Compute new camera position on XZ plane
+        position.x = center.x + radius * cos(glm::radians(angle));
+        position.z = center.z + radius * sin(glm::radians(angle));
+
+        // Keep camera looking at the center
+        front = glm::normalize(center - position);
+    }
+
+
 
 }

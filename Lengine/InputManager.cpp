@@ -13,11 +13,11 @@ namespace Lengine {
 	}
 
 
-	void InputManager::pressKey(unsigned int keyID) {
+	void InputManager::pressKey(uint32_t keyID) {
 		_keyMap[keyID] = true;
 	}
 
-	void InputManager::releaseKey(unsigned int keyID) {
+	void InputManager::releaseKey(uint32_t keyID) {
 		_keyMap[keyID] = false;
 	}
 
@@ -27,7 +27,7 @@ namespace Lengine {
 	}
 
 
-	bool InputManager::isKeyDown(unsigned int keyID) {
+	bool InputManager::isKeyDown(uint32_t keyID) {
 		auto it = _keyMap.find(keyID);
 		if (it != _keyMap.end()){
 			return it->second;
@@ -37,14 +37,14 @@ namespace Lengine {
 		}
 	}
 
-	bool InputManager::isKeyPressed(unsigned int keyID) {
+	bool InputManager::isKeyPressed(uint32_t keyID) {
 		if (isKeyDown(keyID) && !wasKeyDown(keyID)) {
 			return true;
 		}
 		return false;
 	}
 
-	bool InputManager::wasKeyDown(unsigned int keyID) {
+	bool InputManager::wasKeyDown(uint32_t keyID) {
 		auto it = _previousKeyMap.find(keyID);
 		if (it != _previousKeyMap.end()) {
 			return it->second;
@@ -54,24 +54,24 @@ namespace Lengine {
 		}
 	}
 
-	void InputManager::pressMouseButton(unsigned int buttonID) {
+	void InputManager::pressMouseButton(uint8_t buttonID) {
 		_mouseMap[buttonID] = true;
 	}
 
-	void InputManager::releaseMouseButton(unsigned int buttonID) {
+	void InputManager::releaseMouseButton(uint8_t buttonID) {
 		_mouseMap[buttonID] = false;
 	}
 
-	bool InputManager::isMouseButtonDown(unsigned int buttonID) {
+	bool InputManager::isMouseButtonDown(uint8_t buttonID) {
 		auto it = _mouseMap.find(buttonID);
 		return (it != _mouseMap.end()) ? it->second : false;
 	}
 
-	bool InputManager::isMouseButtonPressed(unsigned int buttonID) {
+	bool InputManager::isMouseButtonPressed(uint8_t buttonID) {
 		return isMouseButtonDown(buttonID) && !wasMouseButtonDown(buttonID);
 	}
 
-	bool InputManager::wasMouseButtonDown(unsigned int buttonID) {
+	bool InputManager::wasMouseButtonDown(uint8_t buttonID) {
 		auto it = _previousMouseMap.find(buttonID);
 		return (it != _previousMouseMap.end()) ? it->second : false;
 	}

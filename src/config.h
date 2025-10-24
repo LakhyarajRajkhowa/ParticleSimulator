@@ -6,11 +6,11 @@
 
 class Config {
 public:
-    int screenWidth = 1280;
-    int screenHeight = 720;
+    uint32_t screenWidth = 1280;
+    uint32_t screenHeight = 720;
     bool fullscreen = false;
-    int framerateLimit = 60;
-    int particleCount = 5000;
+    uint16_t framerateLimit = 60;
+    uint64_t particleCount = 5000;
     float bubbleRadius = 5.0f;
     float bubbleIntensity = 1.0f;
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <GL/glew.h>
 
 namespace Lengine {
@@ -6,7 +7,7 @@ namespace Lengine {
     struct  GLTexture
     {
         GLuint id;
-        int width;
-        int height;
+        uint32_t width;
+        uint32_t height;
     };
 }

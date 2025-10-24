@@ -8,8 +8,7 @@ class Solver
 {
     ObjectManager& objectManager;
 private:
-    const Uint32 sub_steps = 8;
-    glm::vec2& gravity = objectManager.gravity;
+    const uint32_t sub_steps = 8;
     float dt = objectManager.dt;
     float dt_sub = dt / sub_steps;
     float SCREEN_WIDTH = objectManager.screenWidth;
@@ -18,7 +17,7 @@ private:
 public:
     Solver(ObjectManager& objMgr) : objectManager(objMgr) {}
 
-    void updateGPU();
+    void update();
 
 
     void updatePositionGPU();

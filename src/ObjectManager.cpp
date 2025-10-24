@@ -2,7 +2,7 @@
 
 
 
-void ObjectManager::addObjectGPU(float2 position, float radius, float3 color, float2 velocity, float dt) {
+void ObjectManager::addObjectGPU(float3 position, float radius, float3 color, float3 velocity, float dt) {
     if (!d_particles) {
         std::cerr << "[GPU] Error: GPU buffer not allocated!\n";
         return;
@@ -15,8 +15,11 @@ void ObjectManager::addObjectGPU(float2 position, float radius, float3 color, fl
     VerletObjectCUDA temp;
     temp.current_position.x = position.x;
 	temp.current_position.y = position.y;
+	temp.current_position.z = position.z;
     temp.old_position.x =position.x - velocity.x * dt;
 	temp.old_position.y = position.y - velocity.y * dt;
+    temp.old_position.z = position.z - velocity.z * dt;
+
     temp.acceleration = make_float3(0.0f, 0.0f, 0.0f);
     temp.radius = radius;
     temp.color = color;

@@ -9,22 +9,25 @@
 #include "utils.h"
 
 #include "../Lengine/InputManager.h"
+#include "../Lengine/Camera3d.h"
 
 class HandleInputs
 {
-	ObjectManager& objectManager;
-public:
-	HandleInputs(ObjectManager& objMgr) : objectManager(objMgr) {}
 
+public:
+	HandleInputs(ObjectManager& objMgr, Lengine::InputManager& inputMgr, Lengine::Camera3d& cam3d)
+		: objectManager(objMgr), inputManager(inputMgr), camera3D(cam3d) {
+	}
 	void handleInputs( bool& running);
-	bool handleMouseResponse();
+	void handleMouseResponse();
 	void handleKeyboardResponse(bool& running);
 
-	void spawnParticle( const glm::vec2 screenCoords, float speed);
-	void spawnParticlesArray( const glm::vec2 screenCoords, int arraySize);
-	
+	void spawnParticle(const glm::vec3& spawnCoords, float speed);
+	void spawnParticlesArray(const glm::vec3& spawnCoords, int arraySize, float speed);
 private:
-	Lengine::InputManager inputManager;
-	glm::vec2& gravity = (objectManager.gravity);
+	ObjectManager& objectManager;
+	Lengine::InputManager& inputManager;
+	Lengine::Camera3d& camera3D;
+	glm::vec3& gravity = (objectManager.gravity);
 
 };

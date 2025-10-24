@@ -12,7 +12,7 @@ __host__ __device__ inline float3 addRainbowColor(float t)
     return make_float3(r, g, b);
 }
 
-__host__ __device__ inline float3 addVelocityColr(float2 velocity, float max_speed) {
+__host__ __device__ inline float3 addVelocityColor(float2 velocity, float max_speed) {
 
     float speed = sqrtf(velocity.x * velocity.x + velocity.y * velocity.y);
 

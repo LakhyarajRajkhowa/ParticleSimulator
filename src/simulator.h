@@ -2,7 +2,9 @@
 
 #include "solver.h"
 #include "handleInputs.h"
-#include "render.h"
+#include "Render.h"
+#include "ParticleRenderer.h"
+#include "BoxRenderer.h"
 
 #include "../Lengine/Lengine.h"
 #include "../Lengine/Window.h"
@@ -16,21 +18,31 @@ class Simulator
 private:
 
 	Lengine::Window mainWindow;
-	Lengine::GLSLProgram textureProgram;
+	Lengine::GLSLProgram particleShader;
+	Lengine::GLSLProgram boxShader;	
 	Lengine::Camera3d camera3D;
-	Lengine::InputManager _inputManager;
+	Lengine::InputManager inputManager;
 
-	void initShaders();
+	void initParticleShaders();
+	void initBoxShaders();
 	void loop();
 	void cudaInit();
 
 	ObjectManager objectManager;
-	Render renderer;
+	Render mainRenderer;
+	ParticleRenderer particleRenderer;
+	BoxRenderer boxRenderer;
 	HandleInputs inputHandler;
-	Solver solver;
+	Solver particleSolver;
 
 	Config config;
 
+	void spawnParticles();
+	void renderParticles();
+	void renderBox();
+
+	float spawnTimer = 0.0f;
+	const float spawnInterval = 0.1f;
 
 public:
 	Simulator();

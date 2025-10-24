@@ -4,12 +4,13 @@
 #include <glm/glm.hpp>
 #include <imgui.h>
 
-bool HandleInputs::handleMouseResponse() {
+bool spawn = false;
+void HandleInputs::handleMouseResponse() {
     glm::vec2 mouseCoords = inputManager.getMouseCoords();  // Use InputManager
     if (inputManager.isMouseButtonDown(SDL_BUTTON_LEFT)) {
      
         if (objectManager.d_particles == nullptr || objectManager.getGPUObjectsCount() <= 0)
-            return false;
+            return;
 
         solveInteraction(
             objectManager.d_particles,
@@ -18,70 +19,111 @@ bool HandleInputs::handleMouseResponse() {
             objectManager.bubbleRadius,
             objectManager.bubbleIntensity,
             objectManager.dt / ImGui::GetIO().Framerate
-        );
-
-        return true;
+        ); 
     }
-    return false;
+
+    int mouseX, mouseY;
+    SDL_GetRelativeMouseState(&mouseX, &mouseY);
+    camera3D.processMouse((float)mouseX, (float)mouseY);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+    
+   
 }
 
 void HandleInputs::handleKeyboardResponse(bool& running) {
-    if (inputManager.isKeyPressed(SDLK_ESCAPE)) {
-        running = false;
+    for (SDL_Keycode key : {SDLK_ESCAPE, SDLK_RETURN, SDLK_UP, SDLK_DOWN, SDLK_LEFT, SDLK_RIGHT}) {
+        if (inputManager.isKeyDown(key)) {
+            switch (key) {
+            case SDLK_UP:
+				objectManager.gravity.y += 10.0f;
+                break;
+            case SDLK_DOWN:
+				objectManager.gravity.y -= 10.0f;
+                break;
+            case SDLK_LEFT:
+				objectManager.gravity.x -= 10.0f;
+                break;
+            case SDLK_RIGHT:
+				objectManager.gravity.x += 10.0f;
+                break;
+            }
+        }
     }
 
-    if (inputManager.isKeyDown(SDLK_w)) gravity.y -= 20.0f;
-    if (inputManager.isKeyDown(SDLK_a)) gravity.x -= 20.0f;
-    if (inputManager.isKeyDown(SDLK_s)) gravity.y += 20.0f;
-    if (inputManager.isKeyDown(SDLK_d)) gravity.x += 20.0f;
+    if (inputManager.isKeyPressed(SDLK_ESCAPE)) 
+    {
+        running = false; 
+    } 
+    if (inputManager.isKeyPressed(SDLK_RETURN))
+    { 
+        spawn = !spawn;
+    }
 }
 
+
 void HandleInputs::handleInputs(bool& running) {
-    SDL_Event e;
-    while (SDL_PollEvent(&e)) {
-        ImGui_ImplSDL2_ProcessEvent(&e);
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL2_ProcessEvent(&event);
 
-        // Update InputManager
-        if (e.type == SDL_KEYDOWN) inputManager.pressKey(e.key.keysym.sym);
-        if (e.type == SDL_KEYUP)   inputManager.releaseKey(e.key.keysym.sym);
-
-        if (e.type == SDL_MOUSEMOTION) {
-            inputManager.setMouseCoords((float)e.motion.x, (float)e.motion.y);
+        switch (event.type)
+        {
+        case SDL_QUIT:
+            running = false;
+            break;
+        case SDL_KEYDOWN:
+            inputManager.pressKey(event.key.keysym.sym);
+            
+            break;
+        case SDL_KEYUP:
+            inputManager.releaseKey(event.key.keysym.sym);
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            inputManager.pressKey(event.button.button);
+            break;
+        case SDL_MOUSEBUTTONUP:
+            inputManager.releaseKey(event.button.button);
+            break;
+        case SDL_MOUSEMOTION:
+            inputManager.setMouseCoords(event.motion.x, event.motion.y);
+            break;
+        
         }
-        if (e.type == SDL_MOUSEBUTTONDOWN)
-            inputManager.pressMouseButton(e.button.button);
 
-        if (e.type == SDL_MOUSEBUTTONUP)
-            inputManager.releaseMouseButton(e.button.button);
-
-        if (e.type == SDL_MOUSEMOTION)
-            inputManager.setMouseCoords((float)e.motion.x, (float)e.motion.y);
-        if (e.type == SDL_QUIT) running = false;
     }
 
-    inputManager.update();  // Call once per frame to update previous key states
     handleMouseResponse();
     handleKeyboardResponse(running);
 }
 
-void HandleInputs::spawnParticle(const glm::vec2 screenCoords, float speed) {
-    if (!objectManager.spawn) return;
+void HandleInputs::spawnParticle(const glm::vec3& spawnCoords, float speed) {
+    if (!spawn) return;
 
     static float t = 0.0f;
-    t += 0.1f;
+    t += 0.1f; // for rainbow color cycling
 
-    float angle = atan(3.0f / 4.0f);
+    // Example: launch angle for X-Y plane, random Z direction
+    float angleXY = atan(3.0f / 4.0f); // you can randomize this if you want
+    float angleZ = 1.0f;               // straight in Z, modify if needed
 
-    float2 pos = make_float2(screenCoords.x, screenCoords.y);
-    float2 vel = make_float2(speed * cos(angle), -speed * sin(angle));
-    float3 color = addRainbowColor(t);
+    float3 pos = make_float3(spawnCoords.x, spawnCoords.y, spawnCoords.z);
+    float3 vel = make_float3(
+        -speed * cos(angleXY) * cos(angleZ),
+        speed * sin(angleXY) * cos(angleZ),
+        -speed * sin(angleZ)
+    );
+
+    float3 color = addRainbowColor(t); // your existing color function
     float radius = ObjectManager::objectRadius;
 
+    // Add the particle to GPU memory
     objectManager.addObjectGPU(pos, radius, color, vel, objectManager.dt / ImGui::GetIO().Framerate);
 }
 
-void HandleInputs::spawnParticlesArray(const glm::vec2 screenCoords, int arraySize) {
+void HandleInputs::spawnParticlesArray(const glm::vec3& spawnCoords, int arraySize, float speed) {
     for (int i = 0; i < arraySize; i++) {
-        spawnParticle({ screenCoords.x, screenCoords.y + i * (ObjectManager::objectRadius * 2) }, 100);
+        // Slight offset in Y and Z for visual separation
+        glm::vec3 offset = glm::vec3(0.0f, i * ObjectManager::objectRadius * 1.5f, i * ObjectManager::objectRadius * 1.5f);
+        spawnParticle(spawnCoords + offset, speed);
     }
 }

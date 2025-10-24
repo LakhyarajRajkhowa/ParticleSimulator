@@ -1,13 +1,17 @@
 #version 330 core
 in vec3 fragColor;
+in float radius;
 out vec4 outColor;
 
 void main()
 {
-    // gl_PointCoord gives the coordinate inside the point [0,1]
     vec2 coord = gl_PointCoord - vec2(0.5);
-    if (dot(coord, coord) > 0.25)
-        discard; // outside circle — discard the fragment
+    float dist = dot(coord, coord);
 
-    outColor = vec4(fragColor, 1.0);
+    if (dist > 0.25)
+        discard;
+
+    // Simple lighting for spherical look
+    float light = sqrt(1.0 - 4.0 * dist);
+    outColor = vec4(fragColor * light, 1.0);
 }

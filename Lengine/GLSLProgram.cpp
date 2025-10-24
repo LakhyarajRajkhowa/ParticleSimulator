@@ -155,6 +155,25 @@ namespace Lengine {
     void GLSLProgram::setMat4(const std::string& name, const glm::mat4& mat) {
         glUniformMatrix4fv(glGetUniformLocation(_programID, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
     }
+    void GLSLProgram::setMat3(const std::string& name, const glm::mat3& mat) {
+        GLint loc = glGetUniformLocation(_programID, name.c_str());
+        if (loc == -1) {
+            // Uniform not found
+           fatalError("Warning: uniform '" + name + "' not found!\n");
+            return;
+        }
+        glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
+    }
+    void GLSLProgram::setVec3(const std::string& name, const glm::vec3& vec) {
+        GLint loc = glGetUniformLocation(_programID, name.c_str());
+        if (loc == -1) return;  // uniform not found
+        glUniform3f(loc, vec.x, vec.y, vec.z);
+    }
+    void GLSLProgram::setVec4(const std::string& name, const glm::vec4& vec) {
+        GLint loc = glGetUniformLocation(_programID, name.c_str());
+        if (loc == -1) return;  // uniform not found
+        glUniform4f(loc, vec.r, vec.g, vec.b, vec.a);
+    }
 }
 
 

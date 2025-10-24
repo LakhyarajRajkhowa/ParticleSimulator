@@ -1,25 +1,23 @@
 #include "solver.h"
 
 
-void Solver::updateGPU()
+void Solver::update()
 {
     int N = objectManager.getGPUObjectsCount();
     for (Uint32 i = 0; i < sub_steps; ++i)
-    {
-        
+    {        
         if (objectManager.d_particles == nullptr || N <= 0) return;
-        applyGravityGPU(objectManager.d_particles, N, make_float2(gravity.x, gravity.y));
-        applyBoundaryCollisionGPU(objectManager.d_particles, N, SCREEN_WIDTH, SCREEN_HEIGHT, objectManager.restitution);      
+        applyGravityGPU(objectManager.d_particles, N, make_float3(objectManager.gravity.x, objectManager.gravity.y, objectManager.gravity.z));
+        applyBoundaryCollisionGPU(objectManager.d_particles, N, objectManager.boxWidth, objectManager.boxHeight, objectManager.boxDepth, objectManager.restitution);      
         solveCollisionByGridGPU(objectManager.d_particles, N, objectManager.reponse_coef, objectManager.attraction_coef, objectManager.repulsion_coef);
         updatePositionGPU();
-
 
     }
 }
 
 void Solver::updatePositionGPU()
 {
-    int N = objectManager.getGPUObjectsCount();
+    uint64_t N = objectManager.getGPUObjectsCount();
     if (N == 0) return;
 
     float* d_vbo = nullptr;

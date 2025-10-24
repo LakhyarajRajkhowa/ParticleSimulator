@@ -1,125 +1,124 @@
-#include "CollisionSolverKernel.cuh"
+#include "ParticleKernels.cuh"
 
+__device__ int gridCounts[GRID_WIDTH][GRID_HEIGHT][GRID_DEPTH];
+__device__ int gridIndices[GRID_WIDTH][GRID_HEIGHT][GRID_DEPTH][MAX_PER_CELL];
+__device__ float3 displacements[DISPLACEMENT_ARRAY_SIZE];
 
-__device__ int gridCounts[GRID_WIDTH][GRID_HEIGHT];
-__device__ int gridIndices[GRID_WIDTH][GRID_HEIGHT][MAX_PER_CELL];
-__device__ float2 displacements[DISPLACEMENT_ARRAY_SIZE];
-
-__device__ int2 getGridCell(float x, float y) {
+__device__ int3 getGridCell(float x, float y, float z) {
     int gx = min(max(int(x / GRID_SIZE_GPU), 0), GRID_WIDTH - 1);
     int gy = min(max(int(y / GRID_SIZE_GPU), 0), GRID_HEIGHT - 1);
-    return make_int2(gx, gy);
+    int gz = min(max(int(z / GRID_SIZE_GPU), 0), GRID_DEPTH - 1);
+    return make_int3(gx, gy, gz);
 }
 
-__global__ void resetGridKernel() {
+__global__ void resetGridKernel3D() {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
+    int z = threadIdx.z + blockIdx.z * blockDim.z;
 
-    if (x < GRID_WIDTH && y < GRID_HEIGHT) {
-        gridCounts[x][y] = 0;
+    if (x < GRID_WIDTH && y < GRID_HEIGHT && z < GRID_DEPTH) {
+        gridCounts[x][y][z] = 0;
         for (int k = 0; k < MAX_PER_CELL; k++)
-            gridIndices[x][y][k] = -1;
+            gridIndices[x][y][z][k] = -1;
     }
 }
-void resetGridGPU() {
-    dim3 threads(16, 16);
-    dim3 blocks((GRID_WIDTH + threads.x - 1) / threads.x,
-        (GRID_HEIGHT + threads.y - 1) / threads.y);
-    resetGridKernel << <blocks, threads >> > ();
-}
-__global__ void buildGridKernel(VerletObjectCUDA* particles, int N) {
+
+void resetGrid3D() {
+    dim3 blockSize(8, 8, 8);
+    dim3 gridSize((GRID_WIDTH + blockSize.x - 1) / blockSize.x,
+        (GRID_HEIGHT + blockSize.y - 1) / blockSize.y,
+        (GRID_DEPTH + blockSize.z - 1) / blockSize.z);
+    resetGridKernel3D<<<gridSize, blockSize>>>();
+}   
+__global__ void buildGridKernel3D(VerletObjectCUDA* particles, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
 
-    int2 cell = getGridCell(particles[i].current_position.x,
-        particles[i].current_position.y);
+    int3 cell = getGridCell(particles[i].current_position.x,
+        particles[i].current_position.y,
+        particles[i].current_position.z);
 
-    int idx = atomicAdd(&gridCounts[cell.x][cell.y], 1);
+    int idx = atomicAdd(&gridCounts[cell.x][cell.y][cell.z], 1);
     if (idx < MAX_PER_CELL)
-        gridIndices[cell.x][cell.y][idx] = i;
+        gridIndices[cell.x][cell.y][cell.z][idx] = i;
 }
 
-void buildGridGPU(VerletObjectCUDA* d_particles, int N) {
-    int threads = 64;
-    int blocks = (N + threads - 1) / threads;
-    buildGridKernel << <blocks, threads >> > (d_particles, N);
-}
-
-__global__ void solveCollisionByGridKernel(VerletObjectCUDA* particles, int N, float response_coef, float attraction_coef, float repulsion_coef) {
+__global__ void solveCollisionByGridKernel3D(VerletObjectCUDA* particles, int N,
+    float response_coef, float attraction_coef, float repulsion_coef)
+{
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
 
-    displacements[i] = make_float2(0.0f, 0.0f);
-
+    displacements[i] = make_float3(0.0f, 0.0f, 0.0f);
     VerletObjectCUDA& obj = particles[i];
-    int2 cell = getGridCell(obj.current_position.x, obj.current_position.y);
+    int3 cell = getGridCell(obj.current_position.x, obj.current_position.y, obj.current_position.z);
 
+    // Check neighbors in 3x3x3 cube
     for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
-            int nx = cell.x + dx;
-            int ny = cell.y + dy;
-            if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;
+            for (int dz = -1; dz <= 1; dz++) {
+                int nx = cell.x + dx;
+                int ny = cell.y + dy;
+                int nz = cell.z + dz;
 
-            int count = gridCounts[nx][ny];
-            for (int k = 0; k < count; k++) {
-                int neighborIdx = gridIndices[nx][ny][k];
-                if (neighborIdx == i || neighborIdx < 0) continue;
+                if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT || nz < 0 || nz >= GRID_DEPTH)
+                    continue;
 
-                VerletObjectCUDA& neighbor = particles[neighborIdx];
+                int count = gridCounts[nx][ny][nz];
+                for (int k = 0; k < count; k++) {
+                    int neighborIdx = gridIndices[nx][ny][nz][k];
+                    if (neighborIdx == i || neighborIdx < 0) continue;
 
-                float2 v = make_float2(obj.current_position.x - neighbor.current_position.x,
-                    obj.current_position.y - neighbor.current_position.y);
-                float dist2 = v.x * v.x + v.y * v.y;
-                float min_dist = obj.radius + neighbor.radius;
+                    VerletObjectCUDA& neighbor = particles[neighborIdx];
 
-                float r_min = 3 * obj.radius;
+                    float3 v = make_float3(obj.current_position.x - neighbor.current_position.x,
+                        obj.current_position.y - neighbor.current_position.y,
+                        obj.current_position.z - neighbor.current_position.z);
 
-                if (dist2 < r_min * r_min) {
-                    float dist = sqrtf(dist2);
-                    if (dist < 1e-6f) continue; // avoid division by zero
+                    float dist2 = v.x * v.x + v.y * v.y + v.z * v.z;
+                    float min_dist = obj.radius + neighbor.radius;
+                    float r_min = 3.0f * obj.radius;
 
-                    float2 n = make_float2(v.x / dist, v.y / dist);
-                    float delta = 0.5f * response_coef * (dist - min_dist);
+                    if (dist2 < r_min * r_min) {
+                        float dist = sqrtf(dist2);
+                        if (dist < 1e-6f) continue;
 
-					float attraction = attraction_coef * (dist - r_min) / dist;
-					float repulsion = repulsion_coef * (dist - r_min) / dist;
+                        float3 n = make_float3(v.x / dist, v.y / dist, v.z / dist);
+                        float delta = 0.5f * response_coef * (dist - min_dist);
 
-                    float mass_ratio_obj = obj.radius / min_dist;
-                    float mass_ratio_neighbor = neighbor.radius / min_dist;
-                   
-                    // molecular attraction
-                    displacements[i].x += n.x * attraction * mass_ratio_obj;
-                    displacements[i].y += n.y * attraction * mass_ratio_obj;
+                        float mass_ratio = obj.radius / min_dist;
 
-					// molecular repulsion
-                    displacements[i].x -= n.x * repulsion * mass_ratio_obj;
-                    displacements[i].y -= n.y * repulsion * mass_ratio_obj;
+                      
 
-                    float max_vel = 1.0f;
-					// collision response
-                    if (dist2 < min_dist * min_dist) {
-                        displacements[i].x -= (n.x * delta * mass_ratio_obj < max_vel)? (n.x * delta * mass_ratio_obj): max_vel;
-                        displacements[i].y -= (n.y * delta * mass_ratio_obj < max_vel) ? (n.y * delta * mass_ratio_obj) : max_vel;
-
+                        // collision response
+                        if (dist2 < min_dist * min_dist) {
+                            displacements[i].x -= n.x * delta * mass_ratio;
+                            displacements[i].y -= n.y * delta * mass_ratio;
+                            displacements[i].z -= n.z * delta * mass_ratio;
+                        }
                     }
-      
                 }
             }
         }
     }
-
-    
 }
 
-__global__ void applyDisplacementsKernel(VerletObjectCUDA* particles, int N) {
+__global__ void applyDisplacementsKernel3D(VerletObjectCUDA* particles, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
 
     particles[i].current_position.x += displacements[i].x;
     particles[i].current_position.y += displacements[i].y;
+    particles[i].current_position.z += displacements[i].z;
 }
 
-__global__ void applyBoundaryCollisionKernel(VerletObjectCUDA* particles, int N, int screenWidth, int screenHeight, float restitution)
+
+__global__ void applyBoundaryCollisionKernel(VerletObjectCUDA* particles,
+    uint64_t N,
+    uint16_t boxWidth,
+    uint16_t boxHeight,
+    uint16_t boxDepth,
+    float restitution)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
@@ -127,30 +126,40 @@ __global__ void applyBoundaryCollisionKernel(VerletObjectCUDA* particles, int N,
     VerletObjectCUDA& p = particles[i];
 
     float3 pos = p.current_position;
-    float2 vel = make_float2(p.current_position.x - p.old_position.x,
-        p.current_position.y - p.old_position.y);
+    float3 vel = make_float3(pos.x - p.old_position.x,
+        pos.y - p.old_position.y,
+        pos.z - p.old_position.z);
 
-    // Left/right walls
+    // X-axis (Left/Right)
     if (pos.x < p.radius) {
         pos.x = p.radius;
         vel.x = -vel.x * restitution;
     }
-    else if (pos.x + p.radius > screenWidth) {
-        pos.x = screenWidth - p.radius;
+    else if (pos.x + p.radius > boxWidth) {
+        pos.x = boxWidth - p.radius;
         vel.x = -vel.x * restitution;
     }
 
-    // Top/bottom walls
+    // Y-axis (Bottom/Top)
     if (pos.y < p.radius) {
         pos.y = p.radius;
         vel.y = -vel.y * restitution;
     }
-    else if (pos.y + p.radius > screenHeight) {
-        pos.y = screenHeight - p.radius;
-        vel.y = -vel.y * restitution;
+   
+
+    // Z-axis (Front/Back)
+    if (pos.z < p.radius) {
+        pos.z = p.radius;
+        vel.z = -vel.z * restitution;
+    }
+    else if (pos.z + p.radius > boxDepth) {
+        pos.z = boxDepth - p.radius;
+        vel.z = -vel.z * restitution;
     }
 
+    // Update particle positions
     p.current_position = pos;
     p.old_position.x = pos.x - vel.x;
     p.old_position.y = pos.y - vel.y;
+    p.old_position.z = pos.z - vel.z;
 }
