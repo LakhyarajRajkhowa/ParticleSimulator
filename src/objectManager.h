@@ -1,16 +1,14 @@
 #pragma once
 
-#include "VerletObject.h"
 #include <vector>
 #include <iostream>
-
+#include <glm/vec2.hpp>
 #include "VerletObjectCUDA.cuh"
 #include <imgui/imgui.h>
 
 class ObjectManager
 {
 private:
-    std::vector<VerletObject> objects; 
 
 public:
     ObjectManager() = default;
@@ -23,11 +21,7 @@ public:
 
     float dt = 0.75f;
     bool spawn = false;
-   
-    // methods for CPU objects
-    VerletObject& addObjectCPU(Vec2 position, float radius, Color color);
-    const std::vector<VerletObject>& getConstObjectsCPU() const { return objects; }
-    std::vector<VerletObject>& getObjectsCPU() { return objects; }
+
 
 	// methods for GPU objects
     cudaGraphicsResource* cudaVBOResource = nullptr;
@@ -38,7 +32,7 @@ public:
     int gpuObjectsCount = 0;
 
 	// Physics constants
-    Vec2 gravity = { 0.0f, 1000.0f };
+    glm::vec2 gravity = { 0.0f, 1000.0f };
 	float restitution = 0.50f;
     float reponse_coef = 0.75f;
 	float attraction_coef = 0.0f;

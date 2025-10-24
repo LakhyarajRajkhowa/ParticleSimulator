@@ -1,29 +1,12 @@
 #include "solver.h"
 
-void Solver::updateCPU()
-{
 
-    float dt_sub = dt / sub_steps;
-
-    for (Uint32 i = 0; i < sub_steps; ++i)
-    {
-        // CPU version
-        applyGravityCPU();
-        collisionHandler.applyBorder(SCREEN_HEIGHT, SCREEN_WIDTH, objectManager);
-        collisionHandler.solveCollisionByGrid(objectManager);
-        updatePositionCPU();
-
-		
-    }
-
-}
 void Solver::updateGPU()
 {
     int N = objectManager.getGPUObjectsCount();
     for (Uint32 i = 0; i < sub_steps; ++i)
     {
         
-        // GPU version
         if (objectManager.d_particles == nullptr || N <= 0) return;
         applyGravityGPU(objectManager.d_particles, N, make_float2(gravity.x, gravity.y));
         applyBoundaryCollisionGPU(objectManager.d_particles, N, SCREEN_WIDTH, SCREEN_HEIGHT, objectManager.restitution);      
@@ -58,18 +41,4 @@ void Solver::updatePositionGPU()
     cudaGraphicsUnmapResources(1, &objectManager.cudaVBOResource, 0);
 }
 
-void Solver::updatePositionCPU()
-{
-    for (auto& obj : objectManager.getObjectsCPU()) {
-        obj.updatePosition(dt);
-    }
-}
 
-
-void Solver::applyGravityCPU()
-{
-    for (auto& obj : objectManager.getObjectsCPU())
-    {
-        obj.accelerate(gravity);
-    }
-}

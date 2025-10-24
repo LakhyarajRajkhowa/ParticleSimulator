@@ -1,34 +1,29 @@
 #include "simulator.h"
 
 Simulator::Simulator()
-    : render(objectManager),       
+    : renderer(objectManager),       
     inputHandler(objectManager),
     solver(objectManager)
     
-{}
+{
+    Lengine::init();
+     //if (!config.loadFromFile("../config.json")) {
+     //   std::cout << "Using default config values.\n";
+     // }
+}
 
 Simulator::~Simulator() {}
 
-bool CPU = false;
 
 void Simulator::run() {
-
-    //  CPU
-    if (CPU) {
-        render.createWindow("PARTICLE SIMULATOR", objectManager.screenWidth, objectManager.screenHeight, 2);
-        render.initParticleBuffersCPU();
-        loop();
-    }
- 
-
-    //  GPU
-    if (!CPU) {
-        render.createWindow("PARTICLE SIMULATOR", objectManager.screenWidth, objectManager.screenHeight, 2);
-        render.initParticleBuffersGPU();
-        render.initCudaInterop();
+		mainWindow.create("PARTICLE SIMULATOR", objectManager.screenWidth, objectManager.screenHeight, 0);
+        camera3D.init(objectManager.screenWidth, objectManager.screenHeight, &_inputManager, glm::ivec3(100, 50, 100), 45.0f);
+        initShaders();
+        renderer.initParticleBuffers();
+        renderer.initCudaInterop();
         cudaInit();
         loop();
-    }
+
 }
 void Simulator::loop() {
 
@@ -37,35 +32,31 @@ void Simulator::loop() {
     while (running) {
         inputHandler.handleInputs( running);
         inputHandler.spawnParticlesArray( { 50,200 }, 5);
+        solver.updateGPU();
+	    camera3D.update(objectManager.dt / ImGui::GetIO().Framerate);
+        renderer.renderUI();
 
-        // CPU
-        if (CPU) {
-            inputHandler.handleMouseResponseCPU();
-            solver.updateCPU();
-            render.renderUI();
-            render.renderCPU();
-        }
-
-
-        // GPU
-        if (!CPU) {
-            inputHandler.handleMouseResponseGPU();
-            solver.updateGPU();
-            render.renderUI();
-            render.renderGPU();
-        }
-
-
-        render.present();
-
-        SDL_Delay(6); // bcoz the particles are spawing too fast!!!
+	    textureProgram.use();
+        glm::mat4 projection = glm::ortho(0.0f, (float)objectManager.screenWidth,
+            (float)objectManager.screenHeight, 0.0f, -1.0f, 1.0f);
+        textureProgram.setMat4("uProjection", projection);
+           
+        renderer.renderGPU();
+        renderer.present();
+	    textureProgram.unuse();
+	    mainWindow.swapBuffer();
+        SDL_Delay(12); // bcoz the particles are spawing too fast!!!
     }
-   if(!CPU) render.cleanupCudaInterop();
-    render.destroy();
+    renderer.cleanupCudaInterop();
+	mainWindow.quitWindow();
+    renderer.destroy();
     
-
 }
 
+void Simulator::initShaders() {
+    textureProgram.compileShaders("../shaders/particle.vert", "../shaders/particle.frag");
+    textureProgram.linkShaders();
+}
 void Simulator::cudaInit() {
     cudaMalloc(&objectManager.d_particles, objectManager.MAX_PARTICLES * sizeof(VerletObjectCUDA));
 }

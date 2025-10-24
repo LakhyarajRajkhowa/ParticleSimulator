@@ -126,7 +126,7 @@ __global__ void applyBoundaryCollisionKernel(VerletObjectCUDA* particles, int N,
 
     VerletObjectCUDA& p = particles[i];
 
-    float2 pos = p.current_position;
+    float3 pos = p.current_position;
     float2 vel = make_float2(p.current_position.x - p.old_position.x,
         p.current_position.y - p.old_position.y);
 

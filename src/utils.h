@@ -7,13 +7,13 @@
 
 const double PI = 2 * acos(0);
 
-int inline randomNumber(int start, int end)
-{
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> distrib(start, end);
-    return distrib(gen);
-}
+//int inline randomNumber(int start, int end)
+//{
+//    random_device rd;
+//    mt19937 gen(rd());
+//    uniform_int_distribution<> distrib(start, end);
+//    return distrib(gen);
+//}
 
 static inline Color getRainbow(float t)
 {

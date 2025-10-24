@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 
+
 bool isFluid = false;
 
 // Helper function to compile shader
@@ -55,46 +56,7 @@ GLuint compileShader(const std::string& vertPath, const std::string& fragPath) {
 }
 
 int Render::createWindow(std::string windowName, int screenWidth, int screenHeight, unsigned int currentFlags) {
-    // Flags for SDL window 
-    Uint32 flags = SDL_WINDOW_OPENGL;
-    if (currentFlags & SDL_WINDOW_FULLSCREEN) {
-        flags |= SDL_WINDOW_FULLSCREEN;
-    }
-    if (currentFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) {
-        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    }
-    if (currentFlags & SDL_WINDOW_RESIZABLE) {
-        flags |= SDL_WINDOW_RESIZABLE;
-    }
 
-    // Create SDL window
-    _sdlWindow = SDL_CreateWindow(windowName.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        screenWidth, screenHeight, flags);
-
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-    glContext = SDL_GL_CreateContext(_sdlWindow);
-    SDL_GL_SetSwapInterval(1);
-
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        std::cerr << "Failed to initialize GLEW\n";
-        return -1;
-    }
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // ImGui setup
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
-    ImGui_ImplSDL2_InitForOpenGL(_sdlWindow, glContext);
-    ImGui_ImplOpenGL3_Init("#version 330");
-
-    // Shader setup
     shaderProgram = compileShader(vertexShaderPath, fragmentShaderPath);
 
 
@@ -105,21 +67,8 @@ void Render::initCudaInterop()
     cudaGraphicsGLRegisterBuffer(&objectManager.cudaVBOResource, particleVBO, cudaGraphicsMapFlagsWriteDiscard);
     std::cout << "[CUDA-OpenGL] Interop initialized for " << objectManager.MAX_PARTICLES << " particles.\n";
 }
-void Render::initParticleBuffersCPU() {
-    particleData.resize(MAX_PARTICLES * 5);
-    glGenVertexArrays(1, &particleVAO);
-    glGenBuffers(1, &particleVBO);
-    glBindVertexArray(particleVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 5 * MAX_PARTICLES, nullptr, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glBindVertexArray(0);
-}
 
-void Render::initParticleBuffersGPU() {
+void Render::initParticleBuffers() {
    // "Particle" VAO/VBO
   particleData.resize(MAX_PARTICLES * 6);
 
@@ -162,7 +111,7 @@ void Render::addImGuiParameter(const char* label) {
     ImGui::Text("Reset Gravity: ");
     ImGui::SameLine();
     if (ImGui::Button("RESET")) {
-        objectManager.gravity = Vec2(0.0f, 1000.0f);
+        objectManager.gravity = glm::vec2(0.0f, 1000.0f);
        
     }
 
@@ -198,20 +147,6 @@ void Render::renderUI() {
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
     ImGui::End();
 
-	// Object count display
-    ImGui::SetNextWindowPos(ImVec2(1350, 50));
-    ImGui::SetNextWindowBgAlpha(0.35f);
-    ImGui::Begin("Objects CPU", nullptr,
-        ImGuiWindowFlags_NoDecoration |
-        ImGuiWindowFlags_AlwaysAutoResize |
-        ImGuiWindowFlags_NoSavedSettings |
-        ImGuiWindowFlags_NoFocusOnAppearing |
-        ImGuiWindowFlags_NoNav);
-
-    ImGui::Text("Objects CPU: %d", static_cast<int>(objectManager.getConstObjectsCPU().size()));
-    ImGui::End();
-
-
     ImGui::SetNextWindowPos(ImVec2(1350, 90));
     ImGui::SetNextWindowBgAlpha(0.35f);
     ImGui::Begin("Objects GPU", nullptr,
@@ -230,49 +165,16 @@ void Render::renderUI() {
 
 }
 
-void Render::renderCPU() {
-   
-    glUseProgram(shaderProgram);
 
-    glm::mat4 projection = glm::ortho(0.0f, (float)objectManager.screenWidth, (float)objectManager.screenHeight, 0.0f, -1.0f, 1.0f);
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uProjection"), 1, GL_FALSE, &projection[0][0]);
-
-    for (size_t i = 0; i < objectManager.getConstObjectsCPU().size(); i++) {
-        auto& obj = objectManager.getConstObjectsCPU()[i];
-        particleData[i * 5 + 0] = obj.current_position.x;
-        particleData[i * 5 + 1] = obj.current_position.y;
-        particleData[i * 5 + 2] = obj.color.r / 255.0f;
-        particleData[i * 5 + 3] = obj.color.g / 255.0f;
-        particleData[i * 5 + 4] = obj.color.b / 255.0f;
-       
-
-    }
-
-    glBindVertexArray(particleVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, particleData.size() * sizeof(float), particleData.data());
-
-    glUniform3f(glGetUniformLocation(shaderProgram, "uColor"), 1.0f, 1.0f, 1.0f); // white
-    glPointSize(objectManager.objectRadius * 2.0f); // increase size of particles
-    glDrawArrays(GL_POINTS, 0, (objectManager.getConstObjectsCPU().size()));
-    glBindVertexArray(0);
-}
 void Render::renderGPU()
 {
 
     int N = objectManager.getGPUObjectsCount();
     if (N == 0) return;
 
-    glUseProgram(shaderProgram);
-
-    // Projection
-    glm::mat4 projection = glm::ortho(0.0f, (float)objectManager.screenWidth,
-        (float)objectManager.screenHeight, 0.0f, -1.0f, 1.0f);
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uProjection"), 1, GL_FALSE, &projection[0][0]);
-
+  
     glBindVertexArray(particleVAO);
     glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
-    glUniform3f(glGetUniformLocation(shaderProgram, "uColor"), 1.0f, 1.0f, 1.0f); // white
     glPointSize(renderSize);
     glDrawArrays(GL_POINTS, 0, N);
     glBindVertexArray(0);
@@ -303,9 +205,6 @@ int Render::destroy() {
     glDeleteVertexArrays(1, &particleVAO);
     glDeleteProgram(shaderProgram);
 
-    SDL_GL_DeleteContext(glContext);
-    SDL_DestroyWindow(_sdlWindow);
-    SDL_Quit();
     return 0;
 }
 

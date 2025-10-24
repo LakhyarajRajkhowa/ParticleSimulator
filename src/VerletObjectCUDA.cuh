@@ -6,9 +6,9 @@
 #include <iostream>
 struct VerletObjectCUDA
 {
-    float2 current_position;
-    float2 old_position;
-    float2 acceleration;
+    float3 current_position;
+    float3 old_position;
+    float3 acceleration;
     float radius;
     float3 color; 
 
@@ -25,7 +25,7 @@ struct VerletObjectCUDA
         current_position.x += velocity.x + acceleration.x * dt * dt;
         current_position.y += velocity.y + acceleration.y * dt * dt;
 
-        acceleration = make_float2(0.0f, 0.0f);
+        acceleration = make_float3(0.0f, 0.0f, 0.0f);
 
     }
 

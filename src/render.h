@@ -8,6 +8,9 @@
 #include <cuda_gl_interop.h>
 #include "ParticleKernels.cuh"
 
+
+#include "../Lengine/GLSLProgram.h"
+
 extern bool isFluid;
 
 
@@ -19,12 +22,10 @@ public:
     int createWindow(std::string windowName, int screenWidth, int screenHeight, unsigned int currentFlags);
     void initCudaInterop();
 
-    void initParticleBuffersCPU();
-    void initParticleBuffersGPU();
+    void initParticleBuffers();
 
     void renderUI();
 
-    void renderCPU();
     void renderGPU();
 
     void present();
@@ -40,7 +41,7 @@ private:
 
     SDL_Window* _sdlWindow = nullptr;
     SDL_GLContext glContext;
-
+    Lengine::GLSLProgram glsl;
     GLuint shaderProgram;
 
 	float renderSize = ObjectManager::objectRadius * 2.0f;

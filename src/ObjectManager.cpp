@@ -1,10 +1,6 @@
 ﻿#include "ObjectManager.h"
 
-VerletObject&  ObjectManager::addObjectCPU(Vec2 position, float radius, Color color)
-{
-    objects.emplace_back(position, radius, color);
-    return objects.back();
-}
+
 
 void ObjectManager::addObjectGPU(float2 position, float radius, float3 color, float2 velocity, float dt) {
     if (!d_particles) {
@@ -17,9 +13,11 @@ void ObjectManager::addObjectGPU(float2 position, float radius, float3 color, fl
     }
 
     VerletObjectCUDA temp;
-    temp.current_position = position;
-    temp.old_position = make_float2(position.x - velocity.x * dt, position.y - velocity.y * dt);
-    temp.acceleration = make_float2(0.0f, 0.0f);
+    temp.current_position.x = position.x;
+	temp.current_position.y = position.y;
+    temp.old_position.x =position.x - velocity.x * dt;
+	temp.old_position.y = position.y - velocity.y * dt;
+    temp.acceleration = make_float3(0.0f, 0.0f, 0.0f);
     temp.radius = radius;
     temp.color = color;
 
