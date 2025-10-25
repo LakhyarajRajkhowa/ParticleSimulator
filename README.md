@@ -13,9 +13,10 @@ https://github.com/user-attachments/assets/90b5d821-f079-413b-930a-71137e0ce872
   - **DOWN**: Apply downward acceleration (gravity down)
   - **LEFT**: Apply leftward acceleration (gravity left)
   - **RIGHT**: Apply rightward acceleration (gravity right)
- 
-- Real-time 3D rendering with OpenGL
-- Optimised perfomance with CUDA multithreading
+    
+## Features 
+  - Real-time 3D rendering with OpenGL
+  - Optimised perfomance with CUDA multithreading
   
 ## Prerequisites
 - CUDA Toolkit 13.0 or later
