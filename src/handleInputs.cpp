@@ -5,6 +5,7 @@
 #include <imgui.h>
 
 bool spawn = false;
+bool rotateCamera = false;
 void HandleInputs::handleMouseResponse() {
     glm::vec2 mouseCoords = inputManager.getMouseCoords();  // Use InputManager
     if (inputManager.isMouseButtonDown(SDL_BUTTON_LEFT)) {
@@ -57,6 +58,10 @@ void HandleInputs::handleKeyboardResponse(bool& running) {
     if (inputManager.isKeyPressed(SDLK_RETURN))
     { 
         spawn = !spawn;
+    }
+    if (inputManager.isKeyPressed(SDLK_r))
+    {
+        rotateCamera = !rotateCamera;
     }
 }
 

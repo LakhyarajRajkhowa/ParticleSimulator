@@ -5,10 +5,7 @@
 
 
 
-void ParticleRenderer::initCudaInterop()
-{
-    cudaGraphicsGLRegisterBuffer(&objectManager.cudaVBOResource, particleVBO, cudaGraphicsMapFlagsWriteDiscard);
-}
+
 
 void ParticleRenderer::initParticleBuffers() {
     particleData.resize(MAX_PARTICLES * 7);
@@ -35,6 +32,12 @@ void ParticleRenderer::initParticleBuffers() {
     glBindVertexArray(0);
 }
 
+void ParticleRenderer::initCudaInterop()
+{
+    cudaError_t err = cudaGraphicsGLRegisterBuffer(&objectManager.cudaVBOResource, particleVBO, cudaGraphicsMapFlagsWriteDiscard);
+    if (err != cudaSuccess)
+        std::cerr << "CUDA register failed: " << cudaGetErrorString(err) << std::endl;
+}
 
 void ParticleRenderer::renderGPU()
 {

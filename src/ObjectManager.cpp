@@ -23,6 +23,7 @@ void ObjectManager::addObjectGPU(float3 position, float radius, float3 color, fl
     temp.acceleration = make_float3(0.0f, 0.0f, 0.0f);
     temp.radius = radius;
     temp.color = color;
+	temp.escpaedBox = false;
 
     cudaMemcpy(&d_particles[gpuObjectsCount], &temp, sizeof(VerletObjectCUDA), cudaMemcpyHostToDevice);
 

@@ -15,6 +15,7 @@ namespace Lengine {
         yaw = -90.0f;
         pitch = 0.0f;
         fov = FOV;
+		cameraRotationAngle = 0.0f; 
         aspectRatio = width / height;
         _inputManager = inputManager;
 
@@ -32,7 +33,7 @@ namespace Lengine {
     }
 
     glm::mat4 Camera3d::getProjectionMatrix() {
-        return glm::perspective(glm::radians(fov), aspectRatio, 0.50f, 1000.0f);
+        return glm::perspective(glm::radians(fov), aspectRatio, 0.50f, 10000.0f);
     }
 
    
@@ -88,22 +89,19 @@ namespace Lengine {
         _speed += 0.01;
         position.y -= _speed;
     }
-    void Camera3d::rotateCamera(const glm::vec3& center, float radius, float angularSpeed, float deltaTime) {
-        // Keep static angle so it continues orbiting over time
-        static float angle = 0.0f;
-
+    void Camera3d::rotateCamera(const glm::vec3& center, float time, float radius, float angularSpeed) {
         // Increase angle based on angular speed and frame time
-        angle += angularSpeed * deltaTime;
-        if (angle > 360.0f) angle -= 360.0f;
+        cameraRotationAngle = angularSpeed * time;
+		if (rotateClockwise) cameraRotationAngle = -cameraRotationAngle;
+        if (cameraRotationAngle > 360.0f) cameraRotationAngle -= 360.0f;
 
         // Compute new camera position on XZ plane
-        position.x = center.x + radius * cos(glm::radians(angle));
-        position.z = center.z + radius * sin(glm::radians(angle));
+        position.x = center.x + radius * cos(glm::radians(cameraRotationAngle));
+		//printf("center: %.2f, radius: %.2f, angle: %.2f, cos: %.2f\n", center.x, radius, angle, cos(glm::radians(angle)));
+        position.z = center.z + radius * sin(glm::radians(cameraRotationAngle));
 
         // Keep camera looking at the center
         front = glm::normalize(center - position);
     }
-
-
 
 }

@@ -10,7 +10,8 @@ struct VerletObjectCUDA
     float3 old_position;
     float3 acceleration;
     float radius;
-    float3 color; 
+    float3 color;
+    bool escpaedBox;
 
     // VERLET INTERGATION
     __device__ void updatePosition(float dt)

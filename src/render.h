@@ -15,9 +15,8 @@ extern bool isFluid;
 
 
 class Render {
-    ObjectManager& objectManager;
 public:
-    Render(ObjectManager& objMgr) : objectManager(objMgr) {}
+    Render(ObjectManager& objMgr, Lengine::Camera3d& cam3d) : objectManager(objMgr), camera3D(cam3d) {}
     
     void renderUI();
     void cleanupCudaInterop();
@@ -25,6 +24,8 @@ public:
 
 
 private:
+    ObjectManager& objectManager;
+    Lengine::Camera3d& camera3D;
 
     GLuint particleVAO = 0;
     GLuint particleVBO = 0;
@@ -33,7 +34,6 @@ private:
 	std::string fragmentShaderPath = "../shaders/particle.frag";
 
 	float renderSize = ObjectManager::objectRadius * 2.0f;
-	Lengine::Camera3d camera3D;
 
     std::vector<float> particleData;
 

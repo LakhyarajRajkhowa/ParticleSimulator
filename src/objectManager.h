@@ -21,9 +21,9 @@ public:
     static constexpr float screenWidth = 1500;
     static constexpr float screenHeight = 700;
     
-    static constexpr uint16_t boxWidth = 600;
-    static constexpr uint16_t boxHeight = 200;
-    static constexpr uint16_t boxDepth = 200;
+    static constexpr uint16_t boxWidth = 800;
+    static constexpr uint16_t boxHeight = 400;
+    static constexpr uint16_t boxDepth = 400;
 
     float dt = 0.75f;
 

@@ -2,28 +2,36 @@
 #include <GL/glew.h>
 
 void BoxRenderer::initBuffers(uint16_t boxWidth, uint16_t boxHeight, uint16_t boxDepth) {
-    // 8 corner vertices of the cuboid
+    float w = static_cast<float>(boxWidth);
+    float h = static_cast<float>(boxHeight);
+    float d = static_cast<float>(boxDepth);
+
+    // 36 vertices (6 faces × 2 triangles × 3 vertices)
     float vertices[] = {
-        // front face (z = 0)
-        0,0,0,            boxWidth,0,0,
-        boxWidth,0,0,     boxWidth,boxHeight,0,
-        boxWidth,boxHeight,0, 0,boxHeight,0,
-        0,boxHeight,0,    0,0,0,
+        // Front face (z = 0)
+        0, 0, 0,   w, 0, 0,   w, h, 0,
+        0, 0, 0,   w, h, 0,   0, h, 0,
 
-        // back face (z = boxDepth)
-        0,0,boxDepth,        boxWidth,0,boxDepth,
-        boxWidth,0,boxDepth, boxWidth,boxHeight,boxDepth,
-        boxWidth,boxHeight,boxDepth, 0,boxHeight,boxDepth,
-        0,boxHeight,boxDepth, 0,0,boxDepth,
+        // Back face (z = d)
+        0, 0, d,   w, h, d,   w, 0, d,
+        0, 0, d,   0, h, d,   w, h, d,
 
-        // connecting edges
-        0,0,0,       0,0,boxDepth,
-        boxWidth,0,0,   boxWidth,0,boxDepth,
-        boxWidth,boxHeight,0, boxWidth,boxHeight,boxDepth,
-        0,boxHeight,0, 0,boxHeight,boxDepth
+        // Left face (x = 0)
+        0, 0, 0,   0, h, 0,   0, h, d,
+        0, 0, 0,   0, h, d,   0, 0, d,
+
+        // Right face (x = w)
+        w, 0, 0,   w, 0, d,   w, h, d,
+        w, 0, 0,   w, h, d,   w, h, 0,
+
+        
+
+        // Bottom face (y = 0)
+        0, 0, 0,   0, 0, d,   w, 0, d,
+        0, 0, 0,   w, 0, d,   w, 0, 0
     };
 
-    vertexCount = 24; // 12 edges * 2 vertices each
+    vertexCount = 36; // 12 triangles * 3 vertices
 
     glGenVertexArrays(1, &boxVAO);
     glGenBuffers(1, &boxVBO);
@@ -40,7 +48,7 @@ void BoxRenderer::initBuffers(uint16_t boxWidth, uint16_t boxHeight, uint16_t bo
 
 void BoxRenderer::render() {
     glBindVertexArray(boxVAO);
-    glDrawArrays(GL_LINES, 0, vertexCount);
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
     glBindVertexArray(0);
 }
 

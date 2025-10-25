@@ -4,6 +4,7 @@
 
 #include "../Lengine/InputManager.h"
 
+extern bool rotateCamera;
 namespace Lengine {
     class Camera3d {
     public:
@@ -17,7 +18,7 @@ namespace Lengine {
         glm::mat4 getProjectionMatrix();
         void update(float deltaTime);
         void processMouse(float xoffset, float yoffset);
-        void rotateCamera(const glm::vec3& center, float radius, float angularSpeed, float deltaTime);
+        void rotateCamera(const glm::vec3& center, float time, float radius, float angularSpeed);
 
     private:
         glm::vec3 position;
@@ -26,6 +27,8 @@ namespace Lengine {
         float yaw, pitch;
         float fov;
         float aspectRatio;
+		float cameraRotationAngle;
+        bool rotateClockwise = true;
 
         glm::vec3 direction;
         InputManager* _inputManager;

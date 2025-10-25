@@ -130,36 +130,46 @@ __global__ void applyBoundaryCollisionKernel(VerletObjectCUDA* particles,
         pos.y - p.old_position.y,
         pos.z - p.old_position.z);
 
-    // X-axis (Left/Right)
-    if (pos.x < p.radius) {
-        pos.x = p.radius;
-        vel.x = -vel.x * restitution;
+    // Skip particles that have escaped the box completely 
+    
+    if ((pos.y + p.radius > boxHeight) &&
+        (((pos.x   < p.radius) || (pos.x + p.radius > boxWidth)) ||
+        ((pos.z   < p.radius) || (pos.z + p.radius > boxDepth)))) {
+		p.escpaedBox = true;
+        return;
     }
-    else if (pos.x + p.radius > boxWidth) {
-        pos.x = boxWidth - p.radius;
-        vel.x = -vel.x * restitution;
-    }
+    else {
+        if (pos.x < p.radius) {
+            pos.x = p.radius;
+            vel.x = -vel.x * restitution;
+        }
+        else if (pos.x + p.radius > boxWidth) {
+            pos.x = boxWidth - p.radius;
+            vel.x = -vel.x * restitution;
+        }
 
-    // Y-axis (Bottom/Top)
-    if (pos.y < p.radius) {
-        pos.y = p.radius;
-        vel.y = -vel.y * restitution;
-    }
-   
+        // Y-axis
+        if (pos.y < p.radius) {
+            pos.y = p.radius;
+            vel.y = -vel.y * restitution;
+        }
 
-    // Z-axis (Front/Back)
-    if (pos.z < p.radius) {
-        pos.z = p.radius;
-        vel.z = -vel.z * restitution;
-    }
-    else if (pos.z + p.radius > boxDepth) {
-        pos.z = boxDepth - p.radius;
-        vel.z = -vel.z * restitution;
-    }
+        // Z-axis
+        if (pos.z < p.radius) {
+            pos.z = p.radius;
+            vel.z = -vel.z * restitution;
+        }
+        else if (pos.z + p.radius > boxDepth) {
+            pos.z = boxDepth - p.radius;
+            vel.z = -vel.z * restitution;
+        }
 
-    // Update particle positions
+		p.escpaedBox = false;
+    }
     p.current_position = pos;
-    p.old_position.x = pos.x - vel.x;
-    p.old_position.y = pos.y - vel.y;
-    p.old_position.z = pos.z - vel.z;
+    p.old_position = make_float3(
+        pos.x - vel.x,
+        pos.y - vel.y,
+        pos.z - vel.z
+    );
 }

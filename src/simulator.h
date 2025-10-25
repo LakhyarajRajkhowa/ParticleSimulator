@@ -5,6 +5,8 @@
 #include "Render.h"
 #include "ParticleRenderer.h"
 #include "BoxRenderer.h"
+#include "PlaneRenderer.h"
+#include "Timer.h"
 
 #include "../Lengine/Lengine.h"
 #include "../Lengine/Window.h"
@@ -20,11 +22,13 @@ private:
 	Lengine::Window mainWindow;
 	Lengine::GLSLProgram particleShader;
 	Lengine::GLSLProgram boxShader;	
+	Lengine::GLSLProgram planeShader;
 	Lengine::Camera3d camera3D;
 	Lengine::InputManager inputManager;
 
 	void initParticleShaders();
 	void initBoxShaders();
+	void initplaneShaders();
 	void loop();
 	void cudaInit();
 
@@ -32,6 +36,7 @@ private:
 	Render mainRenderer;
 	ParticleRenderer particleRenderer;
 	BoxRenderer boxRenderer;
+	PlaneRenderer planeRenderer;
 	HandleInputs inputHandler;
 	Solver particleSolver;
 
@@ -40,9 +45,12 @@ private:
 	void spawnParticles();
 	void renderParticles();
 	void renderBox();
+	void renderPlane();
 
 	float spawnTimer = 0.0f;
+	float cameraRotationAngle = 0.0f;
 	const float spawnInterval = 0.1f;
+
 
 public:
 	Simulator();
